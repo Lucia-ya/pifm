@@ -52,6 +52,7 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
         mSongName = (TextView) findViewById(R.id.song_name);
         mSongName.setSelected(true);
         mPresenter = new MainPresenterImpl(this);
+        mImageButton.setEnabled(false);
 
 
         //библиотека для принятия данных с потока
@@ -82,6 +83,18 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
         audioSource = new ExtractorMediaSource
                 (Uri.parse("http://cdn.pifm.ru/mp3"), dataSourceFactory, new DefaultExtractorsFactory(), new Handler(), null);
         player_audio.prepare(audioSource);
+
+        //включаем кнопку через 2 секунды после запуска
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() { //таймер
+                mImageButton.setEnabled(true);
+            }
+        }, 1500);
+
+
+
+
 
         mImageButton.setOnClickListener(new View.OnClickListener() {
             @Override

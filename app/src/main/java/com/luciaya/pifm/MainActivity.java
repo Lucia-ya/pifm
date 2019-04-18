@@ -40,6 +40,14 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
     private static boolean play_audio = false;
     private MainContract.Presenter mPresenter;
     private ExtractorMediaSource audioSource;
+    private IcyHttpDataSourceFactory factory;
+    private DefaultBandwidthMeter bandwidthMeter;
+    private TrackSelection.Factory videoTrackSelectionFactory;
+    private TrackSelector trackSelector;
+    private String artistName;
+    private String songName;
+    DefaultDataSourceFactory dataSourceFactory;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,32 +61,37 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
         mSongName.setSelected(true);
         mPresenter = new MainPresenterImpl(this);
         mImageButton.setEnabled(false);
-
+        mSongName.setSelected(true);
+        mArtist.setSelected(true);
 
         //библиотека для принятия данных с потока
-        IcyHttpDataSourceFactory factory = new IcyHttpDataSourceFactory.Builder(Util.getUserAgent(this, getResources().getString(R.string.app_name)))
+        factory = new IcyHttpDataSourceFactory.Builder(Util.getUserAgent(this, getResources().getString(R.string.app_name)))
                 .setIcyHeadersListener(null)
                 .setIcyMetadataChangeListener(new IcyHttpDataSource.IcyMetadataListener() {
                     @Override
                     public void onIcyMetaData(IcyHttpDataSource.IcyMetadata icyMetadata) {
                         //режем строку принятую с потока на имя артиста и название трека и меняем текст в TextView
                         //будет запускаться всегда если меняется Title в потоке
-                        String s = icyMetadata.getStreamTitle();
+
+                        String s = String.valueOf(icyMetadata.getStreamTitle());
                         int i = s.indexOf(" - ");
-                        if (i != -1) {
-                            mArtist.setText(s.substring(0, i));
-                            mSongName.setText(s.substring(i+3));
-                        }
+                        Log.d(TAG, "setTextOnButtons");
+                        Log.d(TAG, s.substring(0, i));
+                        Log.d(TAG, s.substring(i + 3));
+                        artistName = s.substring(0, i);
+                        songName = s.substring(i + 3);
+                        mArtist.setText(artistName);
+                        mSongName.setText(songName);
                     }
                 }).build();
 
-        DefaultBandwidthMeter bandwidthMeter = new DefaultBandwidthMeter(); //test
-        TrackSelection.Factory videoTrackSelectionFactory = new AdaptiveTrackSelection.Factory(bandwidthMeter);
-        TrackSelector trackSelector =
+        bandwidthMeter = new DefaultBandwidthMeter(); //test
+        videoTrackSelectionFactory = new AdaptiveTrackSelection.Factory(bandwidthMeter);
+        trackSelector =
                 new DefaultTrackSelector(videoTrackSelectionFactory);
         player_audio = ExoPlayerFactory.newSimpleInstance(this, trackSelector);
 
-        DefaultDataSourceFactory dataSourceFactory = new DefaultDataSourceFactory(getApplicationContext(), null, factory);
+        dataSourceFactory = new DefaultDataSourceFactory(getApplicationContext(), null, factory);
 
         audioSource = new ExtractorMediaSource
                 (Uri.parse("http://cdn.pifm.ru/mp3"), dataSourceFactory, new DefaultExtractorsFactory(), new Handler(), null);
@@ -90,10 +103,7 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
             public void run() { //таймер
                 mImageButton.setEnabled(true);
             }
-        }, 1500);
-
-
-
+        }, 500);
 
 
         mImageButton.setOnClickListener(new View.OnClickListener() {
@@ -118,6 +128,7 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
             @Override
             public void onTracksChanged(TrackGroupArray trackGroups, TrackSelectionArray trackSelections) {
                 Log.v(TAG, "Listener-onTracksChanged... ");
+
             }
 
             @Override
@@ -166,6 +177,10 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
 
     @Override
     public void play() { //вызывается презентером
+        mArtist.setText(artistName);
+        mSongName.setText(songName);
+        mArtist.setVisibility(View.VISIBLE);
+        mSongName.setVisibility(View.VISIBLE);
         play_audio = true;
         player_audio.prepare(audioSource); //поместить audioSource в плеер
         mImageButton.setImageResource(R.drawable.pause); //поменять изображение на кнопке
@@ -181,7 +196,15 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
 
     @Override
     public void onBackPressed() { //при  нажатии back оставновить воспроизведение музыки
+        if (player_audio != null) {
+            mPresenter.onPauseBtnClicked();
+            // save the player state before releasing its resources
+            player_audio.release();
+            player_audio = null;
+        }
         super.onBackPressed();
-        player_audio.setPlayWhenReady(false);
+
     }
+
+
 }

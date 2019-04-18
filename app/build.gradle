@@ -30,10 +30,8 @@ dependencies {
     implementation 'com.android.support:support-v4:27.0.1'
     implementation 'com.android.support:recyclerview-v7:27.0.1'
     implementation 'com.android.support:design:27.+'
-
     //аудио-видео плеер
     implementation 'com.google.android.exoplayer:exoplayer:2.8.4'
-
     //обработка данных с потока
     implementation 'saschpe.android:exoplayer2-ext-icy:1.0.1'
 }

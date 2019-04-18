@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">pifm</string>
+    <string name="app_name">ПиFm</string>
     <string name="song_name">Название композиции</string>
     <string name="artist_name">Исполнитель</string>
 </resources>

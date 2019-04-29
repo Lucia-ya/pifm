@@ -48,21 +48,19 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
     private String songName;
     DefaultDataSourceFactory dataSourceFactory;
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mImageButton = (ImageButton) findViewById(R.id.imageButton);
-        mArtist = (TextView) findViewById(R.id.artist_name);
-        mArtist.setSelected(true);
-        mSongName = (TextView) findViewById(R.id.song_name);
-        mSongName.setSelected(true);
+        mImageButton = findViewById(R.id.imageButton);
+        mArtist = findViewById(R.id.artist_name);
+        mSongName = findViewById(R.id.song_name);
         mPresenter = new MainPresenterImpl(this);
         mImageButton.setEnabled(false);
         mSongName.setSelected(true);
         mArtist.setSelected(true);
+
 
         //библиотека для принятия данных с потока
         factory = new IcyHttpDataSourceFactory.Builder(Util.getUserAgent(this, getResources().getString(R.string.app_name)))
@@ -70,18 +68,13 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
                 .setIcyMetadataChangeListener(new IcyHttpDataSource.IcyMetadataListener() {
                     @Override
                     public void onIcyMetaData(IcyHttpDataSource.IcyMetadata icyMetadata) {
-                        //режем строку принятую с потока на имя артиста и название трека и меняем текст в TextView
-                        //будет запускаться всегда если меняется Title в потоке
-
                         String s = String.valueOf(icyMetadata.getStreamTitle());
                         int i = s.indexOf(" - ");
-                        Log.d(TAG, "setTextOnButtons");
-                        Log.d(TAG, s.substring(0, i));
-                        Log.d(TAG, s.substring(i + 3));
-                        artistName = s.substring(0, i);
-                        songName = s.substring(i + 3);
-                        mArtist.setText(artistName);
-                        mSongName.setText(songName);
+                        if (i != -1) {
+                            artistName = s.substring(0, i);
+                            songName = s.substring(i + 3);
+                        }
+                        mPresenter.onChangeNameCalled(icyMetadata);
                     }
                 }).build();
 
@@ -127,8 +120,6 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
 
             @Override
             public void onTracksChanged(TrackGroupArray trackGroups, TrackSelectionArray trackSelections) {
-                Log.v(TAG, "Listener-onTracksChanged... ");
-
             }
 
             @Override
@@ -177,11 +168,10 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
 
     @Override
     public void play() { //вызывается презентером
-        mArtist.setText(artistName);
-        mSongName.setText(songName);
         mArtist.setVisibility(View.VISIBLE);
         mSongName.setVisibility(View.VISIBLE);
         play_audio = true;
+
         player_audio.prepare(audioSource); //поместить audioSource в плеер
         mImageButton.setImageResource(R.drawable.pause); //поменять изображение на кнопке
         player_audio.setPlayWhenReady(true); //запустить музыку
@@ -192,6 +182,21 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
         play_audio = false;
         mImageButton.setImageResource(R.drawable.play); //поменять изображение на кнопке
         player_audio.setPlayWhenReady(false); //выключить воспроизведение
+    }
+
+    @Override
+    public void changeName(final String artist, final String music) {
+        Log.d("LOGGERR", "changeName: " + artist + " " + music);
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mArtist.setText(artist);
+                mSongName.setText(music);
+                artistName = artist;
+                songName = music;
+            }
+        });
+        Log.d("LOGGERR", "changeName1: " + artist + " " + music);
     }
 
     @Override
